@@ -1,8 +1,22 @@
 const http = require('http');
 
 let datos = [
-    { id: 1, nombre: 'Camilo' },
-    { id: 2, nombre: 'Juan' }
+    {
+        id: 1,
+        nombre: 'Camilo',
+        correo: 'camilo@gmail.com',
+        telefono: '3001234567',
+        ciudad: 'Ipiales',
+        edad: 20
+    },
+    {
+        id: 2,
+        nombre: 'Juan',
+        correo: 'juan@gmail.com',
+        telefono: '3109876543',
+        ciudad: 'Pasto',
+        edad: 21
+    }
 ];
 
 const servidor = http.createServer((req, res) => {
