@@ -97,6 +97,6 @@ const servidor = http.createServer((req, res) => {
     }
 });
 
-servidor.listen(3000, 'localhost', () => {
+servidor.listen(3000, '0.0.0.0', () => {
     console.log('Servidor local ejecutandose en http://localhost:3000');
 });
