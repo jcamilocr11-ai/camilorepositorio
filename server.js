@@ -1,7 +1,8 @@
 const http = require('http');
 const fs = require('fs');
+const path = require('path');
 
-const archivo = 'datos.csv';
+const archivo = path.join(__dirname, 'data', 'clientes.csv');
 
 function leerDatos() {
     const contenido = fs.readFileSync(archivo, 'utf8');
@@ -39,7 +40,7 @@ const servidor = http.createServer((req, res) => {
 
     res.setHeader('Content-Type', 'application/json');
 
-    if (req.method === 'GET' && req.url === '/datos') {
+    if (req.method === 'GET' && req.url === '/api/clientes') {
 
         const datos = leerDatos();
 
@@ -47,7 +48,27 @@ const servidor = http.createServer((req, res) => {
         res.end(JSON.stringify(datos));
     }
 
-    else if (req.method === 'POST' && req.url === '/datos') {
+    else if (req.method === 'GET' && req.url.startsWith('/api/clientes/')) {
+
+        const id = parseInt(req.url.split('/')[3]);
+
+        const datos = leerDatos();
+
+        const dato = datos.find(d => d.id === id);
+
+        if (!dato) {
+            res.writeHead(404);
+            res.end(JSON.stringify({
+                mensaje: 'Dato no encontrado'
+            }));
+            return;
+        }
+
+        res.writeHead(200);
+        res.end(JSON.stringify(dato));
+    }
+
+    else if (req.method === 'POST' && req.url === '/api/clientes') {
 
         let cuerpo = '';
 
@@ -71,9 +92,9 @@ const servidor = http.createServer((req, res) => {
         });
     }
 
-    else if (req.method === 'PUT' && req.url.startsWith('/datos/')) {
+    else if (req.method === 'PUT' && req.url.startsWith('/api/clientes/')) {
 
-        const id = parseInt(req.url.split('/')[2]);
+        const id = parseInt(req.url.split('/')[3]);
 
         let cuerpo = '';
 
@@ -84,6 +105,7 @@ const servidor = http.createServer((req, res) => {
         req.on('end', () => {
 
             const datos = leerDatos();
+
             const dato = datos.find(d => d.id === id);
 
             if (!dato) {
@@ -109,11 +131,12 @@ const servidor = http.createServer((req, res) => {
         });
     }
 
-    else if (req.method === 'DELETE' && req.url.startsWith('/datos/')) {
+    else if (req.method === 'DELETE' && req.url.startsWith('/api/clientes/')) {
 
-        const id = parseInt(req.url.split('/')[2]);
+        const id = parseInt(req.url.split('/')[3]);
 
         const datos = leerDatos();
+
         const posicion = datos.findIndex(d => d.id === id);
 
         if (posicion === -1) {
