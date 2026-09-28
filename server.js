@@ -40,6 +40,22 @@ const servidor = http.createServer((req, res) => {
 
     res.setHeader('Content-Type', 'application/json');
 
+    if (req.method === 'GET' && req.url === '/') {
+
+    const html = fs.readFileSync(
+        path.join(__dirname, 'public', 'index.html'),
+        'utf8'
+    );
+
+    res.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8'
+    });
+
+    res.end(html);
+    return;
+}
+
+
     if (req.method === 'GET' && req.url === '/api/clientes') {
 
         const datos = leerDatos();
