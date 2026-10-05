@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-
 <html lang="es">
-
-<head> <meta charset="UTF-8"> <title>Clientes - API REST</title> </head>
-
+<head>
+<meta charset="UTF-8">
+<title>Clientes - API REST y Big Data</title>
+</head>
 <body>
 
 <h1>Gestión de Clientes</h1>
@@ -42,6 +42,40 @@
 
 <hr>
 
+<h2>Big Data</h2>
+
+<h3>Reporte Batch</h3>
+
+<button id="btnBatch">Cargar reporte Batch</button>
+
+<pre id="batch"></pre>
+
+<h3>Calidad de datos</h3>
+
+<button id="btnCalidad">Cargar calidad de datos</button>
+
+<pre id="calidad"></pre>
+
+<h3>Clientes validos</h3>
+
+<button id="btnValidos">Cargar clientes validos</button>
+
+<pre id="validos"></pre>
+
+<h3>Reporte de clientes</h3>
+
+<button id="btnReporteClientes">Cargar reporte de clientes</button>
+
+<pre id="reporteClientes"></pre>
+
+<h3>Eventos registrados</h3>
+
+<button id="btnEventos">Cargar eventos</button>
+
+<pre id="eventos"></pre>
+
+<hr>
+
 <h2>Registro de solicitudes</h2>
 
 <pre id="log"></pre>
@@ -52,7 +86,9 @@
     const log = document.getElementById('log');
 
     function escribirLog(texto) {
+
         log.textContent += texto + '\n';
+
     }
 
     async function pedir(url, opciones = {}) {
@@ -64,9 +100,13 @@
         let datos;
 
         try {
+
             datos = JSON.parse(texto);
+
         } catch {
+
             datos = texto;
+
         }
 
         escribirLog(
@@ -77,12 +117,8 @@
             respuesta,
             datos
         };
+
     }
-
-
-    // =========================
-    // GET - LISTAR CLIENTES
-    // =========================
 
     async function cargar() {
 
@@ -91,8 +127,11 @@
         lista.innerHTML = '';
 
         if (!Array.isArray(resultado.datos)) {
+
             lista.textContent = 'Error al cargar los clientes';
+
             return;
+
         }
 
         resultado.datos.forEach(cliente => {
@@ -121,13 +160,10 @@
             `;
 
             lista.appendChild(div);
+
         });
+
     }
-
-
-    // =========================
-    // POST - CREAR CLIENTE
-    // =========================
 
     async function crear() {
 
@@ -144,6 +180,7 @@
             edad: parseInt(
                 document.getElementById('edad').value
             )
+
         };
 
         const resultado = await pedir('/api/clientes', {
@@ -155,14 +192,13 @@
             },
 
             body: JSON.stringify(nuevoCliente)
+
         });
 
         escribirLog(
             'POST respuesta: ' +
             JSON.stringify(resultado.datos)
         );
-
-        // Limpiar formulario
 
         document.getElementById('nombre').value = '';
 
@@ -174,15 +210,9 @@
 
         document.getElementById('edad').value = '';
 
-        // Actualizar lista
-
         await cargar();
+
     }
-
-
-    // =========================
-    // PUT - ACTUALIZAR CLIENTE
-    // =========================
 
     async function actualizar(id) {
 
@@ -191,7 +221,9 @@
         );
 
         if (cliente === null) {
+
             return;
+
         }
 
         const resultadoGet =
@@ -203,6 +235,7 @@
             alert('No se encontró el cliente');
 
             return;
+
         }
 
         const datosActualizados = {
@@ -216,6 +249,7 @@
             ciudad: resultadoGet.datos.ciudad,
 
             edad: resultadoGet.datos.edad
+
         };
 
         const resultado = await pedir(
@@ -228,6 +262,7 @@
                 },
 
                 body: JSON.stringify(datosActualizados)
+
             }
         );
 
@@ -237,12 +272,8 @@
         );
 
         await cargar();
+
     }
-
-
-    // =========================
-    // DELETE - ELIMINAR CLIENTE
-    // =========================
 
     async function eliminar(id) {
 
@@ -253,7 +284,9 @@
         );
 
         if (!confirmar) {
+
             return;
+
         }
 
         const resultado = await pedir(
@@ -269,12 +302,58 @@
         );
 
         await cargar();
+
     }
 
+    async function cargarBatch() {
 
-    // =========================
-    // BOTONES
-    // =========================
+        const resultado =
+            await pedir('/api/bigdata/reporte-batch');
+
+        document.getElementById('batch').textContent =
+            resultado.datos.contenido;
+
+    }
+
+    async function cargarCalidad() {
+
+        const resultado =
+            await pedir('/api/bigdata/calidad');
+
+        document.getElementById('calidad').textContent =
+            resultado.datos.contenido;
+
+    }
+
+    async function cargarValidos() {
+
+        const resultado =
+            await pedir('/api/bigdata/clientes-validos');
+
+        document.getElementById('validos').textContent =
+            resultado.datos.contenido;
+
+    }
+
+    async function cargarReporteClientes() {
+
+        const resultado =
+            await pedir('/api/bigdata/reporte-clientes');
+
+        document.getElementById('reporteClientes').textContent =
+            resultado.datos.contenido;
+
+    }
+
+    async function cargarEventos() {
+
+        const resultado =
+            await pedir('/api/bigdata/eventos');
+
+        document.getElementById('eventos').textContent =
+            resultado.datos.contenido;
+
+    }
 
     document
         .getElementById('btnCargar')
@@ -284,15 +363,30 @@
         .getElementById('btnCrear')
         .addEventListener('click', crear);
 
+    document
+        .getElementById('btnBatch')
+        .addEventListener('click', cargarBatch);
 
-    // =========================
-    // CARGAR AL ABRIR
-    // =========================
+    document
+        .getElementById('btnCalidad')
+        .addEventListener('click', cargarCalidad);
+
+    document
+        .getElementById('btnValidos')
+        .addEventListener('click', cargarValidos);
+
+    document
+        .getElementById('btnReporteClientes')
+        .addEventListener('click', cargarReporteClientes);
+
+    document
+        .getElementById('btnEventos')
+        .addEventListener('click', cargarEventos);
 
     cargar();
 
 </script>
 
 </body>
-
 </html>
+
