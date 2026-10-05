@@ -1,6 +1,0 @@
-id,nombre,correo,telefono,ciudad,edad,motivo
-2,,juan@gmail.com,3109876543,Pasto,21,nombre_vacio
-3,Pedro,pedrogmail.com,3201234567,Ipiales,22,correo_invalido
-4,Ana,ana@gmail.com,300123456,Ipiales,25,telefono_invalido
-5,Carlos,carlos@gmail.com,3159876543,Pasto,-5,edad_invalida
-6,Maria,maria@gmail.com,3112223344,,30,ciudad_vacia
