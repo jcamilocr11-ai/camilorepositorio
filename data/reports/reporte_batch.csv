@@ -1,0 +1,12 @@
+tipo,valor,cantidad
+total_eventos,15,15
+metodo_GET,GET,12
+metodo_POST,POST,1
+metodo_PUT,PUT,1
+metodo_DELETE,DELETE,1
+ruta,/api/clientes,13
+ruta,/api/clientes/3,2
+status,200,14
+status,201,1
+tiempo_promedio_ms,51.33,-
+p95_ms,718,-
