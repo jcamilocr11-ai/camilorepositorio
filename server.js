@@ -216,7 +216,7 @@ const servidor = http.createServer((req, res) => {
 
             'data',
 
-            'processed',
+            'reports',
 
             'calidad.csv'
 
