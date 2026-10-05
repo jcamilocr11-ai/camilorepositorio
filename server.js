@@ -1,13 +1,13 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const registrarEvento = require('./bigdata/eventLogger');
 
 const archivo = path.join(__dirname, 'data', 'clientes.csv');
 
 function leerDatos() {
     const contenido = fs.readFileSync(archivo, 'utf8');
     const lineas = contenido.trim().split('\n');
-
     const datos = [];
 
     for (let i = 1; i < lineas.length; i++) {
@@ -38,23 +38,43 @@ function guardarDatos(datos) {
 
 const servidor = http.createServer((req, res) => {
 
+    const inicio = Date.now();
+
+    const eventId = Date.now() + '-' + Math.floor(Math.random() * 10000);
+
+    res.setHeader('X-Event-Id', eventId);
+
+    const finalizarRespuesta = res.end;
+
+    res.end = function(contenido, encoding, callback) {
+
+        const tiempoRespuesta = Date.now() - inicio;
+
+        registrarEvento(
+            req,
+            res.statusCode,
+            tiempoRespuesta
+        );
+
+        finalizarRespuesta.call(res, contenido, encoding, callback);
+    };
+
     res.setHeader('Content-Type', 'application/json');
 
     if (req.method === 'GET' && req.url === '/') {
 
-    const html = fs.readFileSync(
-        path.join(__dirname, 'public', 'index.html'),
-        'utf8'
-    );
+        const html = fs.readFileSync(
+            path.join(__dirname, 'public', 'index.html'),
+            'utf8'
+        );
 
-    res.writeHead(200, {
-        'Content-Type': 'text/html; charset=utf-8'
-    });
+        res.writeHead(200, {
+            'Content-Type': 'text/html; charset=utf-8'
+        });
 
-    res.end(html);
-    return;
-}
-
+        res.end(html);
+        return;
+    }
 
     if (req.method === 'GET' && req.url === '/api/clientes') {
 
@@ -67,9 +87,7 @@ const servidor = http.createServer((req, res) => {
     else if (req.method === 'GET' && req.url.startsWith('/api/clientes/')) {
 
         const id = parseInt(req.url.split('/')[3]);
-
         const datos = leerDatos();
-
         const dato = datos.find(d => d.id === id);
 
         if (!dato) {
@@ -111,7 +129,6 @@ const servidor = http.createServer((req, res) => {
     else if (req.method === 'PUT' && req.url.startsWith('/api/clientes/')) {
 
         const id = parseInt(req.url.split('/')[3]);
-
         let cuerpo = '';
 
         req.on('data', parte => {
@@ -121,7 +138,6 @@ const servidor = http.createServer((req, res) => {
         req.on('end', () => {
 
             const datos = leerDatos();
-
             const dato = datos.find(d => d.id === id);
 
             if (!dato) {
@@ -150,7 +166,6 @@ const servidor = http.createServer((req, res) => {
     else if (req.method === 'DELETE' && req.url.startsWith('/api/clientes/')) {
 
         const id = parseInt(req.url.split('/')[3]);
-
         const datos = leerDatos();
 
         const posicion = datos.findIndex(d => d.id === id);
@@ -172,7 +187,9 @@ const servidor = http.createServer((req, res) => {
     }
 
     else {
+
         res.writeHead(404);
+
         res.end(JSON.stringify({
             mensaje: 'Ruta no encontrada'
         }));
@@ -182,3 +199,4 @@ const servidor = http.createServer((req, res) => {
 servidor.listen(3000, '0.0.0.0', () => {
     console.log('Servidor ejecutandose en http://localhost:3000');
 });
+

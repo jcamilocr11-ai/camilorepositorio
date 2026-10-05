@@ -1,157 +1,298 @@
 <!DOCTYPE html>
+
 <html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Laboratorio HTTP de clientes</title>
-</head>
+
+<head> <meta charset="UTF-8"> <title>Clientes - API REST</title> </head>
 
 <body>
 
-    <h1>Clientes y solicitudes HTTP</h1>
+<h1>Gestión de Clientes</h1>
 
-    <h2>Listar clientes</h2>
-    <button id="btnCargar">GET listar clientes</button>
+<h2>Crear cliente</h2>
 
-    <h2>Crear cliente</h2>
+<label>Nombre:</label>
+<input id="nombre" type="text">
+<br><br>
 
-    <label>Nombre:</label>
-    <input id="nombre" type="text">
-    <br><br>
+<label>Correo:</label>
+<input id="correo" type="email">
+<br><br>
 
-    <label>Correo:</label>
-    <input id="correo" type="email">
-    <br><br>
+<label>Teléfono:</label>
+<input id="telefono" type="text">
+<br><br>
 
-    <label>Teléfono:</label>
-    <input id="telefono" type="text">
-    <br><br>
+<label>Ciudad:</label>
+<input id="ciudad" type="text">
+<br><br>
 
-    <label>Ciudad:</label>
-    <input id="ciudad" type="text">
-    <br><br>
+<label>Edad:</label>
+<input id="edad" type="number">
+<br><br>
 
-    <label>Edad:</label>
-    <input id="edad" type="number">
-    <br><br>
+<button id="btnCrear">POST crear cliente</button>
 
-    <button id="btnCrear">POST crear cliente</button>
+<hr>
 
-    <h2>Clientes registrados</h2>
-    <div id="lista"></div>
+<h2>Clientes registrados</h2>
 
-    <h2>Registro de solicitudes</h2>
-    <pre id="log"></pre>
+<button id="btnCargar">GET listar clientes</button>
 
-    <script>
-        const lista = document.getElementById('lista');
-        const log = document.getElementById('log');
+<div id="lista"></div>
 
-        function escribirLog(texto) {
-            log.textContent += texto + '\n';
+<hr>
+
+<h2>Registro de solicitudes</h2>
+
+<pre id="log"></pre>
+
+<script>
+
+    const lista = document.getElementById('lista');
+    const log = document.getElementById('log');
+
+    function escribirLog(texto) {
+        log.textContent += texto + '\n';
+    }
+
+    async function pedir(url, opciones = {}) {
+
+        const respuesta = await fetch(url, opciones);
+
+        const texto = await respuesta.text();
+
+        let datos;
+
+        try {
+            datos = JSON.parse(texto);
+        } catch {
+            datos = texto;
         }
 
-        async function pedir(url, opciones = {}) {
-            const respuesta = await fetch(url, opciones);
-            const texto = await respuesta.text();
+        escribirLog(
+            `${opciones.method || 'GET'} ${url} -> ${respuesta.status}`
+        );
 
-            let datos;
+        return {
+            respuesta,
+            datos
+        };
+    }
 
-            try {
-                datos = JSON.parse(texto);
-            } catch {
-                datos = texto;
-            }
 
-            escribirLog(
-                `${opciones.method || 'GET'} ${url} -> ${respuesta.status}`
-            );
+    // =========================
+    // GET - LISTAR CLIENTES
+    // =========================
 
-            return {
-                respuesta,
-                datos
-            };
+    async function cargar() {
+
+        const resultado = await pedir('/api/clientes');
+
+        lista.innerHTML = '';
+
+        if (!Array.isArray(resultado.datos)) {
+            lista.textContent = 'Error al cargar los clientes';
+            return;
         }
 
-        async function cargar() {
-            const resultado = await pedir('/api/clientes');
+        resultado.datos.forEach(cliente => {
 
-            lista.innerHTML = '';
+            const div = document.createElement('div');
 
-            resultado.datos.forEach(cliente => {
-                const div = document.createElement('div');
+            div.innerHTML = `
+                <p>
+                    <strong>ID:</strong> ${cliente.id}<br>
+                    <strong>Nombre:</strong> ${cliente.nombre}<br>
+                    <strong>Correo:</strong> ${cliente.correo}<br>
+                    <strong>Teléfono:</strong> ${cliente.telefono}<br>
+                    <strong>Ciudad:</strong> ${cliente.ciudad}<br>
+                    <strong>Edad:</strong> ${cliente.edad}
+                </p>
 
-                div.innerHTML = `
-                    <p>
-                        <strong>ID:</strong> ${cliente.id}<br>
-                        <strong>Nombre:</strong> ${cliente.nombre}<br>
-                        <strong>Correo:</strong> ${cliente.correo}<br>
-                        <strong>Teléfono:</strong> ${cliente.telefono}<br>
-                        <strong>Ciudad:</strong> ${cliente.ciudad}<br>
-                        <strong>Edad:</strong> ${cliente.edad}<br>
+                <button onclick="actualizar(${cliente.id})">
+                    PUT actualizar
+                </button>
 
-                        <button onclick="eliminar(${cliente.id})">
-                            DELETE eliminar
-                        </button>
-                    </p>
-                    <hr>
-                `;
+                <button onclick="eliminar(${cliente.id})">
+                    DELETE eliminar
+                </button>
 
-                lista.appendChild(div);
-            });
+                <hr>
+            `;
+
+            lista.appendChild(div);
+        });
+    }
+
+
+    // =========================
+    // POST - CREAR CLIENTE
+    // =========================
+
+    async function crear() {
+
+        const nuevoCliente = {
+
+            nombre: document.getElementById('nombre').value,
+
+            correo: document.getElementById('correo').value,
+
+            telefono: document.getElementById('telefono').value,
+
+            ciudad: document.getElementById('ciudad').value,
+
+            edad: parseInt(
+                document.getElementById('edad').value
+            )
+        };
+
+        const resultado = await pedir('/api/clientes', {
+
+            method: 'POST',
+
+            headers: {
+                'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify(nuevoCliente)
+        });
+
+        escribirLog(
+            'POST respuesta: ' +
+            JSON.stringify(resultado.datos)
+        );
+
+        // Limpiar formulario
+
+        document.getElementById('nombre').value = '';
+
+        document.getElementById('correo').value = '';
+
+        document.getElementById('telefono').value = '';
+
+        document.getElementById('ciudad').value = '';
+
+        document.getElementById('edad').value = '';
+
+        // Actualizar lista
+
+        await cargar();
+    }
+
+
+    // =========================
+    // PUT - ACTUALIZAR CLIENTE
+    // =========================
+
+    async function actualizar(id) {
+
+        const cliente = prompt(
+            'Escribe el nuevo nombre del cliente:'
+        );
+
+        if (cliente === null) {
+            return;
         }
 
-        async function crear() {
-            const nuevoCliente = {
-                nombre: document.getElementById('nombre').value,
-                correo: document.getElementById('correo').value,
-                telefono: document.getElementById('telefono').value,
-                ciudad: document.getElementById('ciudad').value,
-                edad: parseInt(document.getElementById('edad').value)
-            };
+        const resultadoGet =
+            await pedir(`/api/clientes/${id}`);
 
-            const resultado = await pedir('/api/clientes', {
-                method: 'POST',
+        if (!resultadoGet.datos ||
+            resultadoGet.datos.mensaje) {
+
+            alert('No se encontró el cliente');
+
+            return;
+        }
+
+        const datosActualizados = {
+
+            nombre: cliente,
+
+            correo: resultadoGet.datos.correo,
+
+            telefono: resultadoGet.datos.telefono,
+
+            ciudad: resultadoGet.datos.ciudad,
+
+            edad: resultadoGet.datos.edad
+        };
+
+        const resultado = await pedir(
+            `/api/clientes/${id}`,
+            {
+                method: 'PUT',
+
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(nuevoCliente)
-            });
 
-            escribirLog(
-                'Cliente creado: ' + JSON.stringify(resultado.datos)
-            );
+                body: JSON.stringify(datosActualizados)
+            }
+        );
 
-            document.getElementById('nombre').value = '';
-            document.getElementById('correo').value = '';
-            document.getElementById('telefono').value = '';
-            document.getElementById('ciudad').value = '';
-            document.getElementById('edad').value = '';
+        escribirLog(
+            'PUT respuesta: ' +
+            JSON.stringify(resultado.datos)
+        );
 
-            await cargar();
+        await cargar();
+    }
+
+
+    // =========================
+    // DELETE - ELIMINAR CLIENTE
+    // =========================
+
+    async function eliminar(id) {
+
+        const confirmar = confirm(
+            '¿Seguro que quieres eliminar el cliente ' +
+            id +
+            '?'
+        );
+
+        if (!confirmar) {
+            return;
         }
 
-        async function eliminar(id) {
-            const resultado = await pedir(`/api/clientes/${id}`, {
+        const resultado = await pedir(
+            `/api/clientes/${id}`,
+            {
                 method: 'DELETE'
-            });
+            }
+        );
 
-            escribirLog(
-                'Cliente eliminado: ' + JSON.stringify(resultado.datos)
-            );
+        escribirLog(
+            'DELETE respuesta: ' +
+            JSON.stringify(resultado.datos)
+        );
 
-            await cargar();
-        }
+        await cargar();
+    }
 
-        document
-            .getElementById('btnCargar')
-            .addEventListener('click', cargar);
 
-        document
-            .getElementById('btnCrear')
-            .addEventListener('click', crear);
+    // =========================
+    // BOTONES
+    // =========================
 
-        cargar();
-    </script>
+    document
+        .getElementById('btnCargar')
+        .addEventListener('click', cargar);
+
+    document
+        .getElementById('btnCrear')
+        .addEventListener('click', crear);
+
+
+    // =========================
+    // CARGAR AL ABRIR
+    // =========================
+
+    cargar();
+
+</script>
 
 </body>
+
 </html>
