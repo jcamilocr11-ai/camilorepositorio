@@ -17,5 +17,9 @@
   "bugs": {
     "url": "https://github.com/jcamilocr11-ai/camilorepositorio/issues"
   },
-  "homepage": "https://github.com/jcamilocr11-ai/camilorepositorio#readme"
+  "homepage": "https://github.com/jcamilocr11-ai/camilorepositorio#readme",
+  "dependencies": {
+    "csv-parse": "^7.0.3",
+    "csv-stringify": "^6.9.0"
+  }
 }

@@ -30,4 +30,3 @@ event_id,timestamp,method,path,status_code,response_time_ms
 1791174678634-5409,2026-10-05T04:31:18.634Z,GET,/api/bigdata/clientes-validos,200,2
 1791174692826-5246,2026-10-05T04:31:32.826Z,GET,/api/bigdata/reporte-clientes,200,2
 1791174695152-7659,2026-10-05T04:31:35.152Z,GET,/api/bigdata/eventos,200,2
-

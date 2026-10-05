@@ -1,12 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const archivoEntrada = path.join(__dirname, '..', 'data', 'raw', 'eventos.csv');
-const carpetaSalida = path.join(__dirname, '..', 'data', 'reports');
-const archivoSalida = path.join(carpetaSalida, 'reporte_batch.csv');
+const archivoEntrada = process.argv[2] || path.join(__dirname, '..', 'data', 'raw', 'eventos.csv');
+const archivoSalida = process.argv[3] || path.join(__dirname, '..', 'data', 'reports', 'reporte_batch.csv');
 
 const contenido = fs.readFileSync(archivoEntrada, 'utf8');
-const lineas = contenido.trim().split('\n');
+const lineas = contenido.trim().split(/\r?\n/);
 
 const eventos = [];
 
@@ -17,7 +16,7 @@ for (let i = 1; i < lineas.length; i++) {
         method: partes[2],
         path: partes[3],
         status: parseInt(partes[4]),
-        tiempo: parseInt(partes[5])
+        tiempo: parseFloat(partes[5])
     });
 }
 
@@ -80,6 +79,8 @@ Object.keys(estados).forEach(estado => {
 
 reporte += `tiempo_promedio_ms,${promedio.toFixed(2)},-\n`;
 reporte += `p95_ms,${p95},-\n`;
+
+const carpetaSalida = path.dirname(archivoSalida);
 
 if (!fs.existsSync(carpetaSalida)) {
     fs.mkdirSync(carpetaSalida, { recursive: true });

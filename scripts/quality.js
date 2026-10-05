@@ -1,88 +1,134 @@
 const fs = require('fs');
 const path = require('path');
+const { parse } = require('csv-parse/sync');
+const { stringify } = require('csv-stringify/sync');
 
-const archivoEntrada = path.join(__dirname, '..', 'data', 'clientes.csv');
+const archivoEntrada = path.join(__dirname, '..', 'data', 'raw', 'eventos.csv');
 const carpetaSalida = path.join(__dirname, '..', 'data', 'processed');
+const carpetaReportes = path.join(__dirname, '..', 'data', 'reports');
 
-const archivoValidos = path.join(carpetaSalida, 'clientes_validos.csv');
-const archivoRechazados = path.join(carpetaSalida, 'clientes_rechazados.csv');
-const archivoCalidad = path.join(carpetaSalida, 'calidad.csv');
+const archivoValidos = path.join(carpetaSalida, 'eventos_validos.csv');
+const archivoRechazados = path.join(carpetaSalida, 'eventos_rechazados.csv');
+const archivoCalidad = path.join(carpetaReportes, 'calidad.csv');
 
 const contenido = fs.readFileSync(archivoEntrada, 'utf8');
-const lineas = contenido.trim().split('\n');
 
-const encabezado = lineas[0];
-const validos = [encabezado];
-const rechazados = ['id,nombre,correo,telefono,ciudad,edad,motivo'];
+const registros = parse(contenido, {
+    columns: true,
+    skip_empty_lines: true
+});
 
-let errores = [];
+const validos = [];
+const rechazados = [];
 
-for (let i = 1; i < lineas.length; i++) {
-    const partes = lineas[i].split(',');
+registros.forEach(evento => {
 
-    const id = partes[0];
-    const nombre = partes[1];
-    const correo = partes[2];
-    const telefono = partes[3];
-    const ciudad = partes[4];
-    const edad = partes[5];
+    const errores = [];
 
-    errores = [];
+    if (!evento.timestamp || isNaN(Date.parse(evento.timestamp))) {
+    errores.push('fecha_invalida');
+}
 
-    if (!id) {
+    if (!['GET', 'POST', 'PUT', 'DELETE'].includes(evento.method)) {
+        errores.push('metodo_invalido');
+    }
+
+    if (!evento.path || !evento.path.startsWith('/')) {
+        errores.push('ruta_invalida');
+    }
+
+    const status = Number(evento.status_code);
+
+    if (!Number.isInteger(status) || status < 100 || status > 599) {
+        errores.push('status_invalido');
+    }
+
+    const duracion = Number(evento.response_time_ms);
+
+    if (isNaN(duracion) || duracion < 0) {
+        errores.push('duracion_invalida');
+    }
+
+    if (!evento.event_id) {
         errores.push('id_vacio');
     }
 
-    if (!nombre) {
-        errores.push('nombre_vacio');
-    }
-
-    if (!correo || !correo.includes('@') || !correo.includes('.')) {
-        errores.push('correo_invalido');
-    }
-
-    if (!telefono || telefono.length !== 10 || isNaN(telefono)) {
-        errores.push('telefono_invalido');
-    }
-
-    if (!ciudad) {
-        errores.push('ciudad_vacia');
-    }
-
-    if (!edad || isNaN(edad) || parseInt(edad) <= 0) {
-        errores.push('edad_invalida');
-    }
-
     if (errores.length === 0) {
-        validos.push(lineas[i]);
+        validos.push(evento);
     } else {
-        rechazados.push(lineas[i] + ',' + errores.join('|'));
+        rechazados.push({
+            ...evento,
+            motivo: errores.join('|')
+        });
     }
-}
+
+});
 
 if (!fs.existsSync(carpetaSalida)) {
     fs.mkdirSync(carpetaSalida, { recursive: true });
 }
 
-fs.writeFileSync(archivoValidos, validos.join('\n') + '\n');
-fs.writeFileSync(archivoRechazados, rechazados.join('\n') + '\n');
+if (!fs.existsSync(carpetaReportes)) {
+    fs.mkdirSync(carpetaReportes, { recursive: true });
+}
 
-const total = lineas.length - 1;
-const totalValidos = validos.length - 1;
-const totalRechazados = rechazados.length - 1;
-const porcentajeCalidad = (totalValidos / total) * 100;
+const contenidoValidos = stringify(validos, {
+    header: true,
+    columns: [
+        'event_id',
+        'timestamp',
+        'method',
+        'path',
+        'status_code',
+        'response_time_ms'
+    ]
+});
 
-let calidad = 'metrica,valor\n';
-calidad += `total_registros,${total}\n`;
-calidad += `registros_validos,${totalValidos}\n`;
-calidad += `registros_rechazados,${totalRechazados}\n`;
-calidad += `porcentaje_calidad,${porcentajeCalidad.toFixed(2)}%\n`;
+const contenidoRechazados = stringify(rechazados, {
+    header: true,
+    columns: [
+        'event_id',
+        'timestamp',
+        'method',
+        'path',
+        'status_code',
+        'response_time_ms',
+        'motivo'
+    ]
+});
+
+fs.writeFileSync(archivoValidos, contenidoValidos);
+fs.writeFileSync(archivoRechazados, contenidoRechazados);
+
+const total = registros.length;
+const totalValidos = validos.length;
+const totalRechazados = rechazados.length;
+const porcentajeValido = total === 0 ? 0 : (totalValidos / total) * 100;
+
+const calidad = stringify([
+    {
+        total: total,
+        validos: totalValidos,
+        rechazados: totalRechazados,
+        porcentaje_valido: porcentajeValido.toFixed(2)
+    }
+], {
+    header: true,
+    columns: [
+        'total',
+        'validos',
+        'rechazados',
+        'porcentaje_valido'
+    ]
+});
 
 fs.writeFileSync(archivoCalidad, calidad);
 
-console.log('Validacion de calidad completada');
-console.log('Total registros:', total);
-console.log('Registros validos:', totalValidos);
-console.log('Registros rechazados:', totalRechazados);
-console.log('Porcentaje de calidad:', porcentajeCalidad.toFixed(2) + '%');
-console.log('Archivos generados en:', carpetaSalida);
+console.log('ETL de eventos completada');
+console.log('Total eventos:', total);
+console.log('Eventos validos:', totalValidos);
+console.log('Eventos rechazados:', totalRechazados);
+console.log('Porcentaje valido:', porcentajeValido.toFixed(2) + '%');
+console.log('Eventos validos:', archivoValidos);
+console.log('Eventos rechazados:', archivoRechazados);
+console.log('Calidad:', archivoCalidad);
